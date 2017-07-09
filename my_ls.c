@@ -228,7 +228,6 @@ int main(int argc,char **argv)
     }
     param[j]='\0';
     
-
     if((num + 1) != argc) //只输入a.out ,即 ls  
     {
         strcpy(path,"./");
@@ -239,7 +238,6 @@ int main(int argc,char **argv)
     i= 1;
     do
     {
-     
         if(argv[i][0] == '-')
         {
             i++;
