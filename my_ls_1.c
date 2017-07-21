@@ -16,7 +16,7 @@
 #define PARAM_A    1
 #define PARAM_L    2
 #define PARAM_r    4
-#define PARAM_R    8
+#define PARAM_R    8      //暂时没有实现此功能，呜呜！！
 #define PARAM_I    16
 
 void my_err(const char *err_string ,int line )
@@ -32,13 +32,13 @@ void display_attribute(struct stat buf,char *name,int flag_param)  //以-l参数
     struct group *grp; //struct group  保存文件所有者所属组的信息
     int temp ;
     temp=flag_param ;
-    temp=temp>> 4 & 1; //取出第五位,代表 -i 参数
+    temp=temp>> 4 & 1; //取出第五位,代表有  -i 参数
     if(temp)
         printf("%10d  ",buf.st_ino);
     switch (buf.st_mode & S_IFMT) {
     case S_IFBLK:  printf("b");        break;
     case S_IFCHR:  printf("c");        break;
-    case S_IFDIR:  printf("d");        break; //入队列？？？？
+    case S_IFDIR:  printf("d");        break; 
     case S_IFIFO:  printf("f");        break;
     case S_IFLNK:  printf("l");        break;
     case S_IFREG:  printf("-");        break;
@@ -47,7 +47,7 @@ void display_attribute(struct stat buf,char *name,int flag_param)  //以-l参数
     }
     
 /*所有者的权限*/
-    if(buf.st_mode & S_IRUSR) //与对应的权限取与运算即可
+    if(buf.st_mode & S_IRUSR) //与对应的权限取 与 运算即可
         printf("r");
     else printf("-");
     if (buf.st_mode & S_IWUSR)
@@ -87,7 +87,7 @@ void display_attribute(struct stat buf,char *name,int flag_param)  //以-l参数
     buf_time[strlen(buf_time)- 1]='\0'; //去掉换行符
     printf(" %20s",buf_time); 
 }
-char type_print(struct stat buf,char *name)  //判断文件类型，按颜色打印文件名
+char type_print(struct stat buf,char *name)     //判断文件类型，按颜色打印文件名
 {
     switch (buf.st_mode & S_IFMT)      //printf ("%8s\n")
     {
@@ -103,10 +103,11 @@ char type_print(struct stat buf,char *name)  //判断文件类型，按颜色打
 }
 void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/liushengxi/.vimrc  处理一个目标文件
 {
-    int i,j;
+    int i,j，k;
     struct stat buf;
     char name[NAME_MAX + 1];    //NAME_MAX     一个单独文件最长的名字
-    for(i= 0,j= 0;i<strlen(pathname);i++)  //作用：把pathname (/home/liushengxi/****) 的文件名****存储于name 中
+    k=strlen(pathname);
+    for(i= 0,j= 0;i< k;i++)  //作用：把pathname (/home/liushengxi/****) 的文件名****存储于name 中
     {
         if(pathname[i]=='/')
         {
@@ -116,11 +117,9 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
         name[j++]=pathname[i];
     }
     name[j]='\0';
-
-    if(lstat(pathname,&buf) < 0)   //文件信息存于 buf 中
+   if(lstat(pathname,&buf) < 0)   //文件信息存于 buf 中
         my_err("lstat",__LINE__);
-
-    switch(flag_param)
+   switch(flag_param)
     {
         case PARAM_NONE :
                        if(name[0] != '.')
@@ -136,7 +135,7 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
         case PARAM_L:
                      if(name[0] != '.')
                      {
-                         display_attribute(buf,name,flag_param); //传入flag_param 参数，以判断 i 和 l 参数 
+                         display_attribute(buf,name,flag_param);  //传入flag_param 参数，以判断 i 和 l 参数 
                          type_print(buf,name);
                      }
                      break;
@@ -166,7 +165,7 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
                      type_print(buf,name);
                      break;
         case PARAM_r+PARAM_L :
-                    if(name[0] != '.')
+                    if(name[0] != '.')   //对  -a参数的处理,so easy !!
                     {
                          display_attribute(buf,name,flag_param);
                         type_print(buf,name);
@@ -205,8 +204,6 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
         default:     break;
     }
 }
-
-
 void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liushengxi/***/    或者是   /
 {
     DIR *dir;   //目录指针
@@ -220,9 +217,7 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
 
     while((ptr=readdir(dir)) != NULL)   //目标就是求该目录下的文件总数 count
         count++ ;
-
     closedir(dir);
-
     if(count > 500)
         my_err("too many files in the dir ",__LINE__);
     int i,j,len=strlen(path) ;  
@@ -264,40 +259,36 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
     {
         for(i= count - 1;i>= 0; i-- )
         {
-            display(flag_param,filename[i]);//多次调用函数
+            display(flag_param,filename[i]);   //多次调用函数
         }
-    }else 
+    }
+    else 
     {
         for(i= 0;i< count; i++ )
-            display(flag_param,filename[i]);//多次调用函数
+            display(flag_param,filename[i]);   //多次调用函数
         
     }
     closedir(dir); 
 }
-
-
-
 int main(int argc,char **argv)  
 {
     int i,j,k,num;
-    char path[PATH_MAX+ 1]; //路径
-    int param[32];    //保存命令行参数alirR
-    struct stat buf; //文件信息 
+    char path[PATH_MAX+ 1];  //路径
+    int param[32];      //保存命令行参数alirR
+    struct stat buf;   //文件信息 
     int flag_param= PARAM_NONE; //参数种类
     j= 0;
     num = 0;
-    for(i= 1;i< argc;i++)   //ls    -a   
+    for(i= 1;i< argc;i++)   
     {
         if(argv[i][0] == '-')
         {
             for(k= 1;k < strlen(argv[i]);k++,j++)
                 param[j]=argv[i][k];
-            num=num + 1;
+            num=num + 1;      //num 存储 '-'  的个数 
         }
     } 
-   
-
-    for(i=  0;i< j;i++)
+   for(i=  0;i< j;i++)
     {
         switch(param[i])
         {
@@ -310,12 +301,11 @@ int main(int argc,char **argv)
         }
     }
     param[j]='\0';
-    
-    if((num + 1) == argc) //只输入a.out ,即 ls  
+    if((num + 1) == argc)    //只输入a.out ,即 ls  
     {
         strcpy(path,"./");
         path[2]='\0';
-        display_dir(flag_param,path);//path== './' 
+        display_dir(flag_param,path);  //path== './' 
         return 0;
     }
     i= 1;
@@ -328,12 +318,10 @@ int main(int argc,char **argv)
         }
         else 
         {
-            strcpy(path,argv[i]); //argv[i] 就是**** ,但可能有很多个文件需要显示，所以需要 do while {}循环
+            strcpy(path,argv[i]);  //argv[i] 就是**** ,但可能有很多个文件需要显示，所以需要 do while {}循环
 
             if(stat(path,&buf)< 0)
                 my_err("stat",__LINE__);
-            
-
             if(S_ISDIR(buf.st_mode))  //argv[i] 是一个目录
             {
                 if(path[strlen(argv[i]) - 1] != '/')
@@ -346,7 +334,7 @@ int main(int argc,char **argv)
                 display_dir(flag_param,path);//flag_param ==  0
                 i++ ;
             }
-            else    // arhv[i]是一个文件
+            else           // arhv[i]是一个文件
             {
                 display(flag_param,path);
                 i++ ;
