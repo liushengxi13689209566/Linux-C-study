@@ -18,6 +18,8 @@
 #define PARAM_r    4
 #define PARAM_R    8
 #define PARAM_I    16
+#define TRUE 0
+#define FALSE -1
 
 
 void my_err(const char *err_string ,int line )
@@ -26,7 +28,6 @@ void my_err(const char *err_string ,int line )
     perror(err_string) ; 
     exit(1) ;
 }
-
 
 
 
@@ -39,7 +40,7 @@ void display_attribute(struct stat buf,char *name,int flag_param)  //以-l参数
     temp=flag_param ;
     temp=temp>> 4 & 1; //取出第五位,代表 -i 参数
     if(temp)
-        printf("%+8d  ",buf.st_ino);
+        printf("%10d  ",buf.st_ino);
     switch (buf.st_mode & S_IFMT) {
     case S_IFBLK:  printf("b");        break;
     case S_IFCHR:  printf("c");        break;
@@ -87,18 +88,62 @@ void display_attribute(struct stat buf,char *name,int flag_param)  //以-l参数
 
     psd=getpwuid(buf.st_uid); //getpwuid 通过uid 找到用户名
     grp=getgrgid(buf.st_gid); //getgrgid   通过gid 找到用户名组
-    printf("%-8s",psd->pw_name);
-    printf("%-8s",grp->gr_name);
+    printf("%10s",psd->pw_name);
+    printf("%10s",grp->gr_name);
 
-    printf("%6d",buf.st_size);
+    printf("%10d",buf.st_size);
 
     strcpy(buf_time,ctime(&buf.st_mtime));//ctime 把日期和时间转换为字符串
     buf_time[strlen(buf_time)- 1]='\0'; //去掉换行符
-    printf(" %s",buf_time); 
+    printf(" %20s",buf_time); 
 }
 
+typedef struct node  {
+    char file_name_queue[PATH_MAX+ 1 ];
+    struct node *next ;
+}Queue  ;//the type of node 
 
-char type_print(struct stat buf,char *name)  //判断文件类型，按颜色打印文件名
+
+typedef struct {
+    Queue *front ;
+    Queue *rear ;
+}Link_queue ; //linklist queue  
+
+
+int InQueue(char *name_queue ) //入队列
+{
+    Queue *p;
+    Link_queue *p_link;
+    Queue *p_queue ;
+    p_link=(Link_queue *)malloc(sizeof(Link_queue));
+    p_queue=(Queue *)malloc(sizeof(Queue));
+    p_queue->next = NULL;
+    p_link->rear =p_link->front =p_queue ;
+    p=(Queue *)malloc(sizeof(Queue));
+    p->file_name_queue=name_queue ;   //存储数据 
+    p->next = NULL;
+    p_link->rear->next = p ;
+    p_link->rear = p ;
+    return TRUE ;
+}
+
+int  OutQueue(Link_queue *p_link)  // 出队列，返回
+{
+    Queue *p;
+    if(p_link->front == p_link->rear) // front 始终指在最前面 
+        return FALSE ;
+    else 
+    {
+        display_dir(p_link->front->file_name_queue); //再次打开dir
+        p=p_link->front->next ;
+        p_link->front->next=p->next ;
+    }
+    if(p_link->front->next == NULL ) //一个元素时，需要修改尾指针 
+        p_link->front = p_link->rear ;
+    return TRUE;   
+}
+
+void type_print(struct stat buf,char *name)  //判断文件类型，按颜色打印文件名
 {
     switch (buf.st_mode & S_IFMT)      //printf ("%8s\n")
     {
@@ -136,9 +181,13 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
 
     switch(flag_param)
     {
-        case PARAM_NONE:
+        case PARAM_NONE :
                        if(name[0] != '.')
                        type_print(buf,name);//编写一个函数，根据文件类型，按颜色 printf 
+                       break;
+        case PARAM_r :
+                       if(name[0] != '.')
+                       type_print(buf,name);
                        break;
         case PARAM_A:
                     type_print(buf,name);
@@ -153,7 +202,7 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
         case PARAM_I :
                     if(name[0] != '.')
                     {
-                        printf("%+8d  ",buf.st_ino);
+                        printf("%10d  ",buf.st_ino);
                         type_print(buf,name);
                     }
                     break;
@@ -162,7 +211,7 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
                      type_print(buf,name);
                      break;
         case PARAM_A+PARAM_I:
-                    printf("%+8d  ",buf.st_ino);
+                    printf("%10d  ",buf.st_ino);
                      type_print(buf,name);
                      break;
         case PARAM_I+PARAM_L:
@@ -173,7 +222,7 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
                      display_attribute(buf,name,flag_param);
                      type_print(buf,name);
                      break;
-        default:break;
+        default:     break;
     }
 }
 
@@ -184,8 +233,10 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
     struct  dirent  *ptr; //struct dirent 保存目录的信息
     int count = 0;
     char filename[500][PATH_MAX+ 1],temp[PATH_MAX + 1]; 
-    int flag_temp ;
+    int flag_temp1,flag_temp2 ;
+    struct stat buf ; 
     dir=opendir(path);
+    //如果没有权限打开，就报错就行！！！！
     if(dir == NULL)
         my_err("opendir",__LINE__);
 
@@ -214,25 +265,21 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
     }
 
     //实现  -r   参数
-    flag_temp=flag_param ;
-    flag_temp=flag_temp>> 2 & 1; //取出第三位,代表 -r 参数
+    flag_temp1=flag_param ;
+    flag_temp1=flag_temp1 >> 2 & 1; //取出第三位,代表 -r 参数
         
     for(i= 0;i< count- 1;i++)  //冒泡排序文件名, 考虑-r 参数
     {
         for(j= 0;j< count -1 -i ;j++)
         {
 
-            if(flag_temp )
-            {
-               if(strcmp(filename[j],filename[j + 1]) <  0 )
+                if (flag_temp1 && strcmp(filename[j],filename[j + 1]) < 0 ) //flag_temp is  0 ,不执行该句，is 1 ，判断后面的
                 {
                     strcpy(temp,filename[j+ 1]);
                     strcpy(filename[j + 1],filename[j]);
                     strcpy(filename[j],temp);
                 }
-            }
-            else{
-                 if (strcmp(filename[j],filename[j + 1]) > 0 )
+                else if (strcmp(filename[j],filename[j + 1]) > 0 )
                 {
                     strcpy(temp,filename[j+ 1]);
                     strcpy(filename[j + 1],filename[j]);
@@ -240,9 +287,21 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
                 }
 
         }
-    }}
-    for(i= 0;i< count; i++ )
+    }
+    //实现-R 参数
+    flag_temp2=flag_param ;
+    flag_temp2=flag_temp2 >> 3  & 1; //取出第三位,代表 -r 参数
+
+    for(i= 0;i< count ; i++ )
+    {
         display(flag_param,filename[i]);//多次调用函数
+        if(flag_temp2)    //存在-R 参数
+        {
+            if( stat(filename[i],&buf)< 0)
+                  my_err("stat",__LINE__);
+            if(S_ISDIR(buf.st_mode))     InQueue(filename[i]);
+        }
+    }
     closedir(dir); 
 }
 
@@ -257,17 +316,16 @@ int main(int argc,char **argv)
     int flag_param= PARAM_NONE; //参数种类
     j= 0;
     num = 0;
-    for(i= 1;i< argc;i++) //ls -a -l  -i    rgbobn      argc==4;num == 2
+    for(i= 1;i< argc;i++)   //ls    -a   
     {
         if(argv[i][0] == '-')
         {
             for(k= 1;k < strlen(argv[i]);k++,j++)
                 param[j]=argv[i][k];
+            num=num + 1;
         }
-        num=num + 1;
     } 
-    if(num != 0)
-        num--; //保存'-'的个数
+   
 
     for(i=  0;i< j;i++)
     {
