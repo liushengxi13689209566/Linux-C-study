@@ -252,7 +252,6 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
                     strcpy(filename[j + 1],filename[j]);
                     strcpy(filename[j],temp);
                 }
-
         }
     }
     if(flag_temp)
