@@ -18,11 +18,11 @@
 #define PARAM_R    8
 #define PARAM_I    16
 
-void my_err(const char *err_string ,int line )
+int my_err(const char *err_string ,int line )
 {
     fprintf(stderr,"line:%d " ,line) ; 
     perror(err_string) ; 
-    exit(1) ;
+    return -1 ;
 }
 
 void display_attribute(struct stat buf,char *name,int flag_param)  //以-l参数 显示文件, struct stat *buf 保存文件状态信息的结构体
@@ -144,7 +144,7 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
     if(lstat(pathname,&buf) < 0)   //文件信息存于 buf 中
         my_err("lstat",__LINE__);
 
-    switch(flag_param)
+    /*switch(flag_param)
     {
         case PARAM_NONE :
                        if(name[0] != '.')
@@ -185,30 +185,40 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
                      printf("%10d  ",buf.st_ino);
                      type_print(buf,name);
                      break;
-        case PARAM_I+PARAM_L:
-                    if(name[0] != '.')
-                    {
-                        display_attribute(buf,name,flag_param);
-                        type_print(buf,name);
-                    }
+        case PARAM_A+PARAM_r:
+                    type_print(buf,name);
                      break;
-        case PARAM_r+PARAM_A :
+        case PARAM_A+PARAM_R :
                      type_print(buf,name);
                      break;
-        case PARAM_r+PARAM_L :
+        case PARAM_I+PARAM_L :
                     if(name[0] != '.')
                     {
                          display_attribute(buf,name,flag_param);
                         type_print(buf,name);
                     }
                      break;
-        case PARAM_r+PARAM_I :
+        case PARAM_I+PARAM_r :
                     if(name[0]!= '.')
                     {
-                         printf("%10d  ",buf.st_ino);
+                        printf("%10d  ",buf.st_ino);
                         type_print(buf,name);
                     }
                      break;
+        case PARAM_I+PARAM_R :
+                    if(name[0]!= '.')
+                    {
+                        printf("%10d  ",buf.st_ino);
+                        type_print(buf,name);
+                    }
+                     break;
+        case PARAM_R+PARAM_r :
+                    if(name[0]!= '.')
+                        type_print(buf,name);
+                     break;
+
+
+
         case PARAM_I+PARAM_L+PARAM_A:
                      display_attribute(buf,name,flag_param);
                      type_print(buf,name);
@@ -221,19 +231,56 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
                      printf("%10d  ",buf.st_ino);
                      type_print(buf,name);
                      break;
-        case PARAM_r+PARAM_I+PARAM_L:
+        case PARAM_R+PARAM_I+PARAM_L:
                     if(name[0] != '.')
                     {
                         display_attribute(buf,name,flag_param);
                         type_print(buf,name);
                     }
                         break;
+        case PARAM_R+PARAM_A+PARAM_L:
+                        display_attribute(buf,name,flag_param);
+                        type_print(buf,name);
+                        break;
+
         case PARAM_r+PARAM_I+PARAM_L+PARAM_A:
                      display_attribute(buf,name,flag_param);
                      type_print(buf,name);
                      break;
 
         default:     break;
+    }*/
+    int temp[5]; 
+    int t=flag_param ;
+    for(i= 0;i< 5;i++)
+        temp[4-i]=(t>> i & 1);
+    if(temp[4])   //-a 
+    {
+        if(temp[3])    //   -l
+        {
+            display_attribute(buf,name,flag_param);
+            type_print(buf,name);
+        }
+        else  //无 -l 
+        {
+            if(temp[0])  //-i
+            { printf("%10d  ",buf.st_ino); type_print(buf,name);}
+            else         type_print(buf,name);
+        }
+    }
+    else  //无 -a 
+    {
+        if(temp[3] && name[0] !='.')    //   -l
+        {
+            display_attribute(buf,name,flag_param);
+            type_print(buf,name);
+        }
+        else  if(name[0] != '.')//无 -l 
+        {
+            if(temp[0])  //-i
+            { printf("%10d  ",buf.st_ino); type_print(buf,name);}
+            else         type_print(buf,name);
+        }
     }
 }
 void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liushengxi/***/    或者是   /
@@ -243,13 +290,14 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
     int count = 0;
     int m = 0;
     struct stat  buf ;
-    char filename[500][PATH_MAX+ 1],temp[PATH_MAX + 1]; 
+    char filename[100][PATH_MAX+ 1],temp[PATH_MAX + 1]; 
     int flag_temp ,flag_temp1;
-    
+    int t;
     dir=opendir(path);
     if(dir == NULL)
-        my_err("opendir",__LINE__);
-
+    t=my_err("opendir",__LINE__);
+    if(t< 0)    return ;
+    
     while((ptr=readdir(dir)) != NULL)   //目标就是求该目录下的文件总数 count
         count++ ;
 
@@ -297,7 +345,7 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
         }
     }
     flag_temp1=flag_param ;
-    flag_temp1=flag_temp1 >> 3 & 1;
+    flag_temp1=flag_temp1 >> 3 & 1; //-R
 
     for(i= 0;i < count ; i++ )
     {
