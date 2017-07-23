@@ -38,7 +38,7 @@ void display_attribute(struct stat buf,char *name,int flag_param)  //以-l参数
     switch (buf.st_mode & S_IFMT) {
     case S_IFBLK:  printf("b");        break;
     case S_IFCHR:  printf("c");        break;
-    case S_IFDIR:  printf("d");        break; //入队列？？？？
+    case S_IFDIR:  printf("d");        break;
     case S_IFIFO:  printf("f");        break;
     case S_IFLNK:  printf("l");        break;
     case S_IFREG:  printf("-");        break;
@@ -144,112 +144,6 @@ void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/l
     if(lstat(pathname,&buf) < 0)   //文件信息存于 buf 中
         my_err("lstat",__LINE__);
 
-    /*switch(flag_param)
-    {
-        case PARAM_NONE :
-                       if(name[0] != '.')
-                       type_print(buf,name);//编写一个函数，根据文件类型，按颜色 printf 
-                       break;
-        case PARAM_r :
-                       if(name[0] != '.')
-                       type_print(buf,name);
-                       break;
-        case PARAM_A:
-                    type_print(buf,name);
-                    break;
-        case PARAM_L:
-                     if(name[0] != '.')
-                     {
-                         display_attribute(buf,name,flag_param); //传入flag_param 参数，以判断 i 和 l 参数 
-                         type_print(buf,name);
-                     }
-                     break;
-        case PARAM_R :
-                    if(name[0] != '.')
-                    {
-                        type_print(buf,name);
-                    }
-                    break;
-        case PARAM_I :
-                    if(name[0] != '.')
-                    {
-                        printf("%10d  ",buf.st_ino);
-                        type_print(buf,name);
-                    }
-                    break;
-        case PARAM_A+PARAM_L :
-                     display_attribute(buf,name,flag_param);
-                     type_print(buf,name);
-                     break;
-        case PARAM_A+PARAM_I:
-                     printf("%10d  ",buf.st_ino);
-                     type_print(buf,name);
-                     break;
-        case PARAM_A+PARAM_r:
-                    type_print(buf,name);
-                     break;
-        case PARAM_A+PARAM_R :
-                     type_print(buf,name);
-                     break;
-        case PARAM_I+PARAM_L :
-                    if(name[0] != '.')
-                    {
-                         display_attribute(buf,name,flag_param);
-                        type_print(buf,name);
-                    }
-                     break;
-        case PARAM_I+PARAM_r :
-                    if(name[0]!= '.')
-                    {
-                        printf("%10d  ",buf.st_ino);
-                        type_print(buf,name);
-                    }
-                     break;
-        case PARAM_I+PARAM_R :
-                    if(name[0]!= '.')
-                    {
-                        printf("%10d  ",buf.st_ino);
-                        type_print(buf,name);
-                    }
-                     break;
-        case PARAM_R+PARAM_r :
-                    if(name[0]!= '.')
-                        type_print(buf,name);
-                     break;
-
-
-
-        case PARAM_I+PARAM_L+PARAM_A:
-                     display_attribute(buf,name,flag_param);
-                     type_print(buf,name);
-                     break;
-        case PARAM_r+PARAM_L+PARAM_A:
-                     display_attribute(buf,name,flag_param);
-                     type_print(buf,name);
-                     break;
-        case PARAM_r+PARAM_I+PARAM_A:
-                     printf("%10d  ",buf.st_ino);
-                     type_print(buf,name);
-                     break;
-        case PARAM_R+PARAM_I+PARAM_L:
-                    if(name[0] != '.')
-                    {
-                        display_attribute(buf,name,flag_param);
-                        type_print(buf,name);
-                    }
-                        break;
-        case PARAM_R+PARAM_A+PARAM_L:
-                        display_attribute(buf,name,flag_param);
-                        type_print(buf,name);
-                        break;
-
-        case PARAM_r+PARAM_I+PARAM_L+PARAM_A:
-                     display_attribute(buf,name,flag_param);
-                     type_print(buf,name);
-                     break;
-
-        default:     break;
-    }*/
     int temp[5]; 
     int t=flag_param ;
     for(i= 0;i< 5;i++)
@@ -288,9 +182,7 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
     DIR *dir;   //目录指针
     struct  dirent  *ptr; //struct dirent 保存目录的信息
     int count = 0;
-    int m = 0;
     struct stat  buf ;
-    char filename[100][PATH_MAX+ 1],temp[PATH_MAX + 1]; 
     int flag_temp ,flag_temp1;
     int t;
     dir=opendir(path);
@@ -300,13 +192,15 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
     
     while((ptr=readdir(dir)) != NULL)   //目标就是求该目录下的文件总数 count
         count++ ;
-
     closedir(dir);
-
-    if(count > 500 )
-        my_err("too many files in the dir ",__LINE__);
     int i,j,len=strlen(path) ;  
+    char **filename ,*temp;
+    filename=(char **)malloc(sizeof(char *) * count );
+    for(i= 0 ;i< count ;i++)
+        filename[i]=(char *)malloc(sizeof(char)*(PATH_MAX + 1) );
+    temp=(char *)malloc(sizeof(char)*(PATH_MAX + 1));
     dir=opendir(path);
+
     for(i= 0;i< count;i++) //一个文件一个文件的打开
     {
         ptr=readdir(dir);
@@ -330,26 +224,36 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
     {
         for(j= 0;j< count -1 -i ;j++)
         {
-            if(flag_temp && strcmp(filename[i],filename[j+ 1]) < 0)//先后顺序不能变
+            if(flag_temp ) //-r
             {
-                strcpy(temp,filename[j+ 1]);
-                strcpy(filename[j + 1],filename[j]);
-                strcpy(filename[j],temp);
-            }
-            else if (strcmp(filename[j],filename[j + 1]) > 0 )
+                if(strcmp(filename[j],filename[j+ 1]) < 0)//先后顺序不能变
                 {
                     strcpy(temp,filename[j+ 1]);
                     strcpy(filename[j + 1],filename[j]);
                     strcpy(filename[j],temp);
                 }
+            }
+            else 
+            {
+                if (strcmp(filename[j],filename[j + 1]) > 0 )
+                {
+                    strcpy(temp,filename[j+ 1]);
+                    strcpy(filename[j + 1],filename[j]);
+                    strcpy(filename[j],temp);
+                }
+
+            }
         }
     }
+    for(i= 0 ;i< count ;i++)
+        display(flag_param,filename[i]);
+
     flag_temp1=flag_param ;
     flag_temp1=flag_temp1 >> 3 & 1; //-R
 
-    for(i= 0;i < count ; i++ )
+    if( flag_temp1 )
     {
-        if( flag_temp1 )
+        for(i= 0;i < count ; i++ )
         {
             if(lstat(filename[i],&buf)< 0 ) //有-R 参数才判断
             {
@@ -358,25 +262,17 @@ void display_dir(int  flag_param,char *path)  //path 目录名，即：/home/liu
             }
             if(S_ISDIR(buf.st_mode) && jiexi(filename[i]) )  
             {
-                display(flag_param ,filename[i]);
-                strcat(filename[i],"/");
-                strcpy(filename[m++],filename[i]) ;
+                printf("*****************************************%s\n",filename[i]);
+                strcat(filename[i],"/\0");
+                display_dir(flag_param,filename[i]) ;
             }
-            else display(flag_param ,filename[i]);
-        }
-        else  //无-R  参数
-        {
-           display(flag_param,filename[i]);
         }
     }
+    for(i= 0;i< count ;i++)
+        free(filename[i]);
+    free(filename);
+    free(temp);
     closedir(dir); 
-    if(m > 256 )
-        my_err("too many files in the dir !! \n",__LINE__);
-    for(i =0 ;i< m;i++)
-    {
-        printf("*******************%s\n",filename[i]);
-        display_dir(flag_param ,filename[i]);
-    }
 }
 int main(int argc,char **argv)  
 {
