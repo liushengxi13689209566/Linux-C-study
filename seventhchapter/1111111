@@ -1,0 +1,33 @@
+/*************************************************************************
+	> File Name: test.c
+	> Author: Linuxer_liu
+	> Mail: 
+	> Created Time: 2017年07月15日 星期六 19时03分22秒
+ ************************************************************************/
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/types.h>
+
+int main()
+{
+    char buf[256];
+    char arglist[100][256];
+    int i,j= 0,k= 0;
+    gets(buf);
+    for(i= 0;buf[i] ;i++)
+    {
+        if(buf[i] !=' ')
+            arglist[j][k++ ]= buf[i];
+        else if(buf[i] == ' ') 
+        {
+            arglist[j++][k]='\0';
+            k= 0;
+        }
+    }
+    printf("-----------%d\n",j);
+    printf("arglist[%d]==%s\n",j-1 ,arglist[j-1]);
+    for(i= 0;i<j;i++)
+        printf("%s\t",arglist[i]);
+}
