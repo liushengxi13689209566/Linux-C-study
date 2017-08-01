@@ -16,7 +16,8 @@
  #define   out_direct     1
  #define   int_redirect   2
  #define   pipe           3
- 
+ int count =  0; //全局变量表示历史命令
+
 typedef struct {
     char pre[500];
     char now[500];
@@ -26,6 +27,8 @@ typedef struct {
  void do_cmd(int argcount ,char arglist[100][256]); //执行命令
  int find_cmd(char *cmd) ;//找寻命令
 int solve_cd(char arglist[100][256],WW *p) ; //cd 命令的实现
+int add_file(char *line);  //实现history 命令
+ int read_file() ;
   
  int main(void)
  {
@@ -56,8 +59,19 @@ int solve_cd(char arglist[100][256],WW *p) ; //cd 命令的实现
          if(*line)
              add_history(line);
          explain_input(line,&argcount,arglist);   //argcount 就是数组的 个数
+         if(strlen(arglist[0]) == 0 )        continue ;
+         if(add_file(line) < 0)  
+         {
+             printf("sorry !! 加入历史文件出错！！\n");
+             continue ;
+         }
          if((strcmp(arglist[0],"exit") == 0 || strcmp(arglist[0],"logout") == 0 )&& strlen(arglist[1]) == 0 )
              break;
+         if((strcmp(arglist[0],"history") == 0) &&   (strlen(arglist[1]) == 0 ))
+         {
+             read_file();
+             continue ;
+         }
          if(strcmp(arglist[0],"love") == 0)
          {
              pid_love=fork();
@@ -79,6 +93,25 @@ int solve_cd(char arglist[100][256],WW *p) ; //cd 命令的实现
          do_cmd(argcount,arglist); //处理命令
      }
      return 0;
+ }
+ int add_file(char *line)
+ {
+     FILE  *fp ;
+    fp = fopen("/tmp/history","a+");  //追加数据 a+ ,第一次创建文件并追加写
+    fprintf(fp ," %d  ",++count);
+    fprintf(fp ,"%s",line);
+    fputc('\n',fp);
+    fclose(fp);
+     return 1;
+ }
+ int read_file()
+ {
+     FILE *fp;
+     char str[520];
+     fp = fopen("/tmp/history","r");  //追加数据 a+ ,第一次创建文件并追加写
+     while(fgets(str,520,fp) != NULL )
+     printf("%s",str);
+     fclose(fp);
  }
 int solve_cd(char arglist[100][256],WW *p)
 { 
