@@ -34,7 +34,7 @@ int main(void)
     char send_buf[128] ; //发送数据
     memset(&serve_addr,0,sizeof(struct sockaddr_in)) ;
     serve_addr.sin_family =AF_INET ; //TCP 
-    serve_addr.sin_port = htons(5288) ; //TCP 
+    serve_addr.sin_port = htons(5285) ; //TCP 
     serve_addr.sin_addr.s_addr= inet_addr("127.0.0.1") ; //直接设置为本地IP
     conn_fd = socket(AF_INET,SOCK_STREAM ,0 );
     if(conn_fd < 0)  myerror("client socket ",__LINE__);
@@ -52,10 +52,11 @@ int main(void)
     while(1)
     {
         memset(send_buf,0,sizeof(send_buf));
+        memset(recv_buf,0,sizeof(recv_buf));
         printf("你想聊点什么呐？？： ");
         scanf("%s",send_buf);
-        memset(recv_buf,0,sizeof(recv_buf));
         send(conn_fd,send_buf,sizeof(send_buf),0);
+        if(strcmp(send_buf,"exit") == 0 )      break ; //退出客户端
         recv(conn_fd,recv_buf,sizeof(recv_buf),0);
         printf("the recv is %s \n",recv_buf);
     }

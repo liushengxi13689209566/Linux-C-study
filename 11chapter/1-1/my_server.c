@@ -4,11 +4,9 @@
 	> Mail: 
 	> Created Time: 2017年08月08日 星期二 08时49分52秒
  ************************************************************************/
-
 #include"myhead.h"
-#define SERV_PORT 5288
+#define SERV_PORT 5285
 #define LISTENQ  12
-
 #define USERNAME  0
 #define PASSWD    1
 typedef struct userinfo{
@@ -53,18 +51,14 @@ int main(void)
     char send_buf[128]; //发送数据
     struct sockaddr_in cli_addr ,serve_addr ;
     int cli_len ;
-
     sock_fd = socket(AF_INET,SOCK_STREAM ,0); //创建套接字
     if(sock_fd < 0) myerror("socket",__LINE__);
-
     memset(&serve_addr,0,sizeof(struct sockaddr_in)) ;
     serve_addr.sin_family =AF_INET ; //TCP 
     serve_addr.sin_port = htons(SERV_PORT) ; //TCP 
     serve_addr.sin_addr.s_addr= htonl(INADDR_ANY) ; //直接设置为本地IP
-
     if(bind(sock_fd,(struct sockaddr *)&serve_addr,sizeof(struct sockaddr_in)) <   0 )//绑定套接字
        myerror("bind ",__LINE__);
-
        if(listen(sock_fd,LISTENQ) < 0) //转换为监听套接字
        myerror("listen",__LINE__);
        cli_len =sizeof(struct sockaddr_in);
@@ -96,7 +90,6 @@ int main(void)
                    {
                        if(  !strcmp(users[name_num].passwd,recv_buf)    )
                        {
-
                            send_data(conn_fd,"1");
                            printf("%s login  \n",users[name_num].username);
                            send_data(conn_fd,"welcome to my server !!! @ liushengxi,It;'s we talk ~~~'\n");
@@ -107,10 +100,11 @@ int main(void)
                }
                while( 1 )  //处理数据
                {
+                    memset(recv_buf,0,sizeof(recv_buf));
                     recv(conn_fd,recv_buf,sizeof(recv_buf),0); //接受网络数据 
                     printf("------------------%s\n",recv_buf);
+                    if(strcmp(recv_buf,"exit") ==  0) { printf("%s is left ~~~~~~\n",users[name_num].username) ;  break;}
                     send_data(conn_fd,recv_buf) ;//写入文件 
-                    memset(recv_buf,0,sizeof(recv_buf));
               }
                close(sock_fd);
                close(conn_fd);
@@ -120,6 +114,3 @@ int main(void)
        }
       return 0;
 }
-
-
-
