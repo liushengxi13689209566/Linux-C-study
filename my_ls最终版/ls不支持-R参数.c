@@ -1,4 +1,8 @@
 
+
+
+// 支持-ilra 参数 与 简单颜色
+
 #include<stdio.h>
 #include<unistd.h>
 #include<stdlib.h>
