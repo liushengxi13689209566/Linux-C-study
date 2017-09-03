@@ -78,7 +78,7 @@ int add_file(char *line);  //实现history 命令
              switch(pid_love)
              {
                  case -1:   printf("fork pid_love  ERROR !!!\n") ;return 0;
-                 case 0 :   execvp("/home/liushengxi/linux&&C/Linux-system-programming/myshell_1/love",NULL); exit(0);
+                 case 0 :   execvp("/home/liushengxi/linux&&C/Linux-system-programming/myshell_1/love",NULL); exit(0); //路径会变
                  default :if(waitpid(pid_love ,&status_love,0)< 0)
                          {
                             printf("waitpid is  ERROR !!!\n");

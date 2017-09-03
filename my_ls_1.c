@@ -103,8 +103,8 @@ char type_print(struct stat buf,char *name)     //判断文件类型，按颜色
 }
 void display(int flag_param,char *pathname)  ///home/liushengxi/test.c   /home/liushengxi/.vimrc  处理一个目标文件
 {
-    int i,j，k;
-    struct stat buf;
+    int i,j,k;
+    struct stat buf ;
     char name[NAME_MAX + 1];    //NAME_MAX     一个单独文件最长的名字
     k=strlen(pathname);
     for(i= 0,j= 0;i< k;i++)  //作用：把pathname (/home/liushengxi/****) 的文件名****存储于name 中
