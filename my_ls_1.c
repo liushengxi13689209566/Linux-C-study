@@ -19,6 +19,9 @@
 #define PARAM_R    8      //暂时没有实现此功能，呜呜！！
 #define PARAM_I    16
 
+
+
+
 void my_err(const char *err_string ,int line )
 {
     fprintf(stderr,"line:%d " ,line) ; 
