@@ -1,0 +1,30 @@
+/*************************************************************************
+	> File Name: test.c
+	> Author: Linuxer_liu
+	> Mail: 
+	> Created Time: 2017年07月26日 星期三 15时56分42秒
+ ************************************************************************/
+
+#include<stdio.h>
+#include<stdlib.h>
+#include<unistd.h>
+#include<sys/types.h>
+#include<stdio.h>
+#include<readline/readline.h>
+#include<readline/history.h>
+int main(void)
+{
+        char *line;
+    while(1) {
+                line = readline(">>");
+                puts(line);
+        if(*line) {
+                        add_history(line);
+                    
+        }
+                free(line);
+            
+    }
+        return 0;
+
+}
